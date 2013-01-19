@@ -13,7 +13,7 @@ class Asciidoctor::Renderer
 
     backend = options[:backend]
     case backend
-    when 'html5', 'docbook45'
+    when 'html5', 'docbook45', 'asciidoc', 'markdown'
       eruby = load_eruby options[:eruby]
       #Asciidoctor.require_library 'asciidoctor/backends/' + backend
       require 'asciidoctor/backends/' + backend
