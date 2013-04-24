@@ -696,6 +696,7 @@ class InlineQuotedTemplate < BaseTemplate
   QUOTED_TAGS = {
     :emphasis => ['<em>', '</em>'],
     :strong => ['<strong>', '</strong>'],
+    :strike => ['<del>', '</del>'],
     :monospaced => ['<code>', '</code>'],
     :superscript => ['<sup>', '</sup>'],
     :subscript => ['<sub>', '</sub>'],

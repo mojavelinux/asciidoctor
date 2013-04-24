@@ -609,6 +609,9 @@ module Asciidoctor
     # #unquoted#
     [:none, :constrained, /(^|[^\w;:}])(?:\[([^\]]+?)\])?#(\S|\S.*?\S)#(?=\W|$)/m],
 
+    # -strike-
+    [:strike, :constrained, /(^|[^\w;:}])(?:\[([^\]]+?)\])?-([^\s&;-]|[^\s&;-].*?[^\s&;-])-(?=\W|$)/m],
+
     # ^superscript^
     [:superscript, :unconstrained, /\\?(?:\[([^\]]+?)\])?\^(.+?)\^/m],
 

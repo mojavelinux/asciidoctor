@@ -564,6 +564,7 @@ class InlineQuotedTemplate < BaseTemplate
   QUOTED_TAGS = {
     :emphasis => ['<emphasis>', '</emphasis>'],
     :strong => ['<emphasis role="strong">', '</emphasis>'],
+    :strike => ['<emphasis role="strikethrough" revisionflag="deleted">', '</emphasis>'],
     :monospaced => ['<literal>', '</literal>'],
     :superscript => ['<superscript>', '</superscript>'],
     :subscript => ['<subscript>', '</subscript>'],
