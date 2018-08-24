@@ -4889,6 +4889,38 @@ context 'Lists model' do
     assert_equal list.items, list.content
   end
 
+  test 'id and role assigned to ulist item in model are transmitted to output' do
+    input = <<-EOS
+* one
+* two
+* three
+    EOS
+
+    doc = document_from_string input
+    item_0 = doc.blocks[0].items[0]
+    item_0.id = 'one'
+    item_0.add_role 'item'
+    output = doc.convert
+    assert_xpath '//li[@id="one"]', output, 1
+    assert_xpath '//li[@id="one"][@class="item"]', output, 1
+  end
+
+  test 'id and role assigned to olist item in model are transmitted to output' do
+    input = <<-EOS
+. one
+. two
+. three
+    EOS
+
+    doc = document_from_string input
+    item_0 = doc.blocks[0].items[0]
+    item_0.id = 'one'
+    item_0.add_role 'item'
+    output = doc.convert
+    assert_xpath '//li[@id="one"]', output, 1
+    assert_xpath '//li[@id="one"][@class="item"]', output, 1
+  end
+
   test 'list item should be the parent of block attached to a list item' do
     input = <<-EOS
 * list item 1
