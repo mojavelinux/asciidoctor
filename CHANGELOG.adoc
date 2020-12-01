@@ -15,6 +15,10 @@ For a detailed view of what has changed, refer to the {uri-repo}/commits/master[
 
 == Unreleased
 
+Enhancements::
+
+  * Allow the CLI to control the logging level using the `--log-level` option (#3868)
+
 Bug Fixes::
 
   * Update default stylesheet to remove dash in front of cite on nested quote block (#3847)

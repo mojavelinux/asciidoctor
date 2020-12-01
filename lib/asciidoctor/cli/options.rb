@@ -25,7 +25,8 @@ module Asciidoctor
         self[:base_dir] = options[:base_dir]
         self[:source_dir] = options[:source_dir]
         self[:destination_dir] = options[:destination_dir]
-        self[:failure_level] = ::Logger::Severity::FATAL
+        self[:log_level] = options[:log_level] if options[:log_level]
+        self[:failure_level] = options.fetch :failure_level, ::Logger::Severity::FATAL
         self[:trace] = false
         self[:timings] = false
       end
@@ -118,9 +119,13 @@ module Asciidoctor
               'may be specified more than once') do |path|
             (self[:requires] ||= []).concat(path.split ',')
           end
-          opts.on('--failure-level LEVEL', %w(warning WARNING error ERROR info INFO), 'set minimum logging level that triggers non-zero exit code: [WARN, ERROR, INFO] (default: FATAL)') do |level|
+          opts.on('--failure-level LEVEL', %w(error ERROR warning WARNING info INFO), 'set minimum logging level that triggers non-zero exit code: [ERROR, WARNING, INFO] (default: FATAL)') do |level|
             level = 'WARN' if (level = level.upcase) == 'WARNING'
             self[:failure_level] = ::Logger::Severity.const_get level, false
+          end
+          opts.on('--log-level LEVEL', %w(error ERROR warning WARNING info INFO debug DEBUG), 'set logging level: [ERROR, WARNING, INFO, DEBUG] (default: WARN)') do |level|
+            level = 'WARN' if (level = level.upcase) == 'WARNING'
+            self[:log_level] = ::Logger::Severity.const_get level, false
           end
           opts.on('-q', '--quiet', 'silence application log messages and script warnings (default: false)') do |verbose|
             self[:verbose] = 0

@@ -129,6 +129,10 @@ Matching templates found in subsequent directories override ones previously disc
   The minimum logging level that triggers a non-zero exit code (failure).
   If this option is not set (default: FATAL), the program exits with exit code zero even if warnings or errors have been logged.
 
+*--log-level*=_LEVEL_::
+  Set the severity level on the built-in logger used for reporting application log messages.
+  Defaults to WARNING.
+
 *-q, --quiet*::
   Silence application log messages and script warnings.
 
