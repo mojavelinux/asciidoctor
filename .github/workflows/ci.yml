@@ -19,37 +19,15 @@ jobs:
     needs: activate
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest]
-        ruby: ['jruby-9.2.17.0', '2.3', '2.4', '2.5', '2.6', '2.7', '3.0']
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        ruby: ['jruby-head']
         asciimath-version: [~]
         pygments-version: ['~> 2.0']
         rouge-version: [~]
-        exclude:
-        - os: ubuntu-latest
-          ruby: '3.0'
         include:
         - os: ubuntu-latest
-          ruby: truffleruby-20.2.0
-        - os: ubuntu-latest
-          ruby: jruby-9.1.17.0
-          pygments-version: ~
-        - os: windows-latest
-          ruby: jruby-9.1.17.0
-          pygments-version: ~
-        - os: macos-latest
-          ruby: '3.0'
-        - os: ubuntu-latest
-          ruby: '2.3'
-          asciimath-version: '~> 1.0.0'
-        - os: ubuntu-latest
-          ruby: '2.3'
+          ruby: jruby-head
           pygments-version: '~> 1.2.0'
-        - os: ubuntu-latest
-          ruby: '2.3'
-          rouge-version: '~> 2.0.0'
-        - os: ubuntu-latest
-          ruby: '3.0'
-          primary: primary
     runs-on: ${{ matrix.os }}
     env:
       COVERAGE: ${{ matrix.primary }}
