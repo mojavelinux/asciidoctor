@@ -712,6 +712,8 @@ module Extensions
   # methods for registering or defining a processor and looks up extensions
   # stored in the registry during parsing.
   class Registry
+    EXTENSION_TYPE_STORES = %i(@block_macro_extensions @inline_macro_extensions)
+
     # Public: Returns the {Asciidoctor::Document} on which the extensions in this registry are being used.
     attr_reader :document
 
@@ -720,7 +722,7 @@ module Extensions
 
     def initialize groups = {}
       @groups = groups
-      reset
+      @saved_state = reset
     end
 
     # Public: Activates all the global extension {Group}s and the extension {Group}s
@@ -730,7 +732,7 @@ module Extensions
     #
     # Returns the instance of this [Registry].
     def activate document
-      reset if @document
+      @saved_state ? (reset @saved_state) : (@saved_state = save)
       @document = document
       unless (ext_groups = Extensions.groups.values + @groups.values).empty?
         ext_groups.each do |group|
@@ -1422,9 +1424,18 @@ module Extensions
       end
     end
 
-    def reset
-      @preprocessor_extensions = @tree_processor_extensions = @postprocessor_extensions = @include_processor_extensions = @docinfo_processor_extensions = @block_extensions = @block_macro_extensions = @inline_macro_extensions = nil
+    def reset state = nil
       @document = nil
+      if state
+        state.each {|name, val| instance_variable_set name, val }
+      else
+        EXTENSION_TYPE_STORES.each {|name| instance_variable_set name, nil }
+        nil
+      end
+    end
+
+    def save
+      EXTENSION_TYPE_STORES.each_with_object({}) {|name, accum| accum[name] = instance_variable_get name }
     end
 
     def resolve_args args, expect
