@@ -300,12 +300,33 @@ class AbstractNode
     image_uri icon, 'iconsdir'
   end
 
+  # Public: Determine the mimetype of the image URI.
+  #
+  # If the format attribute is specified on the current node and non-empty,
+  # derive the mimetype from that value. Otherwise, if the image is a data URI,
+  # read the mimetype from the URI. Otherwise, derive the mimetype from the file
+  # extension of the URI, if it has one (tolerating a query string or fragment
+  # in the case of SVG). Otherwise, assume the mimetype is
+  # application/octet-stream.
+  def image_mimetype uri
+    if !(format = attr 'format').nil_or_empty?
+      format == 'svg' ? 'image/svg+xml' : %(image/#{format})
+    elsif (uri.start_with? 'data:') && (ImageDataUriRx.match? uri)
+      uri.slice 5, ((uri.index ';') - 5)
+    elsif (ext = Helpers.extname uri, nil)
+      (ext.start_with? '.svg') ? 'image/svg+xml' : %(image/#{ext.slice 1, ext.length})
+    else
+      'application/octet-stream'
+    end
+  end
+
   # Public: Construct a URI reference or data URI to the target image.
   #
-  # If the target image is a URI reference, then leave it untouched.
+  # If the target image is a URI reference (including a data URI), return it.
   #
   # The target image is resolved relative to the directory retrieved from the
-  # specified attribute key, if provided.
+  # specified attribute key, if provided. If the resolved image target is a URI
+  # reference (including a data URI), then return that value.
   #
   # If the 'data-uri' attribute is set on the document, and the safe mode level
   # is less than SafeMode::SECURE, the image will be safely converted to a data URI
