@@ -1407,7 +1407,7 @@ Your browser does not support the video tag.
       see_also = term.see_also
     end
     lines << [%(<dt>#{text}</dt>)]
-    unless term.leaf?
+    if see_also || !term.leaf?
       lines << '<dd>'
       lines << '<dl>'
       see_also.each do |also_term|
