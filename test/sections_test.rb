@@ -2871,6 +2871,57 @@ context 'Sections' do
       assert_includes output, '<a class="indexterm" href="#_indexterm_4">Institutes</a>'
     end
 
+    test 'should preserve authored content in an index section' do
+      input = <<~'EOS'
+      = Document Title
+
+      == Animals
+
+      The ((tiger)) is the largest cat species.
+
+      [index]
+      == Index
+
+      Index introduction.
+      EOS
+
+      output = convert_string_to_embedded input
+      assert_includes output, '<p>Index introduction.</p>'
+    end
+
+    test 'should render see-also association for a leaf index term in HTML output' do
+      input = <<~'EOS'
+      = Document Title
+
+      == Formats
+
+      indexterm2:[HTML,see-also=CSS]
+      indexterm2:[CSS]
+
+      [index]
+      == Index
+      EOS
+
+      output = convert_string_to_embedded input
+      assert_includes output, 'see also CSS'
+    end
+
+    test 'should generate the same HTML index when a document is converted twice' do
+      input = <<~'EOS'
+      = Document Title
+
+      == Animals
+
+      The ((tiger)) is the largest cat species.
+
+      [index]
+      == Index
+      EOS
+
+      doc = Asciidoctor.load input, standalone: false
+      assert_equal doc.convert, doc.convert
+    end
+
     test 'should honor xrefstyle when generating references in HTML index' do
       input = <<~'EOS'
       = Document Title
