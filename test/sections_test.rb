@@ -2887,6 +2887,12 @@ context 'Sections' do
 
       output = convert_string_to_embedded input
       assert_includes output, '<p>Index introduction.</p>'
+      assert_css '.sectionbody > .paragraph + .index', output, 1
+      assert_css '.index a.indexterm', output, 1
+
+      output = convert_string_to_embedded input.sub '((tiger))', 'tiger'
+      assert_includes output, '<p>Index introduction.</p>'
+      assert_css '.index', output, 0
     end
 
     test 'should render see-also association for a leaf index term in HTML output' do

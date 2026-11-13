@@ -1371,18 +1371,19 @@ Your browser does not support the video tag.
   end
 
   def generate_index_section_content node
-    lines = ['<div class="index">']
-    if (index_catalog = (doc = node.document).catalog[:indexterms])
-      index_catalog.link_associations
-      xrefstyle = doc.attr 'xrefstyle', nil, true
-      index_catalog.categories.each do |category|
-        lines << '<div class="indexblock">'
-        lines << %(<div class="title">#{category.name}</div>)
-        lines << '<dl>'
-        category.terms.each {|term| generate_index_term lines, term, xrefstyle }
-        lines << '</dl>'
-        lines << '</div>'
-      end
+    content = node.content
+    return content unless (index_catalog = (doc = node.document).catalog[:indexterms])
+
+    lines = content.empty? ? ['<div class="index">'] : [content, '<div class="index">']
+    index_catalog.link_associations
+    xrefstyle = doc.attr 'xrefstyle', nil, true
+    index_catalog.categories.each do |category|
+      lines << '<div class="indexblock">'
+      lines << %(<div class="title">#{category.name}</div>)
+      lines << '<dl>'
+      category.terms.each {|term| generate_index_term lines, term, xrefstyle }
+      lines << '</dl>'
+      lines << '</div>'
     end
     lines << '</div>'
     lines.join LF
