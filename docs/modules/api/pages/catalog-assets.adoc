@@ -19,10 +19,11 @@ The processor always catalogs the following assets, regardless of this setting:
 
 * block or inline anchors (key: `:refs`)
 * footnotes (key: `:footnotes`)
+* index terms (key: `:indexterms`)
 
 Generally speaking, inline elements are not cataloged until conversion.
 Therefore, they're only available after the document has been converted, not after it has been loaded.
-However, inline anchors are an exception.
+However, inline anchors and index terms in section titles can be cataloged during parsing.
 
 Inline anchors in paragraphs and list items are cataloged when the document is parsed.
 However, the scan for inline anchors happens before inline passthroughs are processed.
@@ -69,7 +70,7 @@ Let's explore it.
 Assets which have been cataloged are available from the `catalog` property on the document model (i.e., the parsed document).
 The catalog is a Ruby hash.
 The keys are the asset families (e.g., `:links`, `:images`, etc).
-The value of each key is an array of assets.
+The value depends on the asset family: an array, a map, or a specialized catalog object.
 The asset object varies by family.
 
 Let's look at an example of how to access links, images, and refs from the asset catalog.
@@ -259,3 +260,46 @@ section: _ci => CI
 ....
 
 An idea of something you can do with the refs table is validate deep xrefs across documents.
+
+[#indexterms]
+=== :indexterms
+
+The `:indexterms` key contains an `Asciidoctor::IndexCatalog`, or `nil` if no index terms have been registered.
+Index terms are cataloged regardless of the `:catalog_assets` option and whether the document contains an index section.
+The catalog is populated as index-term macros are processed, generally during conversion.
+Terms in section titles can be registered earlier, while the document is parsed.
+
+[,ruby]
+----
+doc = Asciidoctor.load 'A ((tiger)) and (((Big cats,Tigers))) term.'
+doc.convert
+index = doc.catalog[:indexterms]
+index.categories.each do |category|
+  puts "#{category.name}: #{category.terms.map(&:name).join ', '}"
+end
+----
+
+This example prints:
+
+[.output]
+....
+B: Big cats
+T: tiger
+....
+
+The catalog provides these methods:
+
+`categories`:: Returns sorted `IndexTermCategory` objects, each with a `name` and sorted primary `terms`.
+`find_category(name)`:: Finds a category by its exact name, or returns `nil`.
+`find_primary_term(name)`:: Finds a primary term by its exact plain-text name, or returns `nil`.
+`link_associations`:: Resolves `see` and `see-also` associations to primary terms when possible.
+Unresolved names are represented by `UnresolvedIndexTerm` objects.
+`empty?`:: Reports whether the catalog contains any categories.
+
+Each `IndexTerm` exposes its plain-text `name`, sorted `subterms`, and occurrence destinations through `dests` or `dests_by_section`.
+Each `IndexDestination` provides a generated occurrence `id` and a containing `section` (or the document for a term outside a section).
+After `link_associations` is called, `see` exposes a single associated term and `see_also` exposes a sorted array of associated terms, or `nil` when absent.
+The HTML converter calls `link_associations` when generating an index; other catalog consumers can call it explicitly.
+
+The catalog stores terms independently of their presentation.
+Converters decide how to render entries and destinations; a cataloged destination does not guarantee that its ID appears in every output format.
