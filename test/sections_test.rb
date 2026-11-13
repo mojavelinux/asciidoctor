@@ -2916,16 +2916,30 @@ context 'Sections' do
       input = <<~'EOS'
       = Document Title
 
-      == Animals
+      == ((Animals))
 
-      The ((tiger)) is the largest cat species.
+      A ((tiger)) and another ((tiger)).
+      indexterm2:[Cats,see-also=Animals]
+      indexterm:[Big cats,Lions]
+      (((Big cats,Tigers)))
+
+      .((lion))
+      ((lion))
 
       [index]
       == Index
       EOS
 
       doc = Asciidoctor.load input, standalone: false
-      assert_equal doc.convert, doc.convert
+      first = doc.convert
+      assert_css 'a[id^="_indexterm_"]', first, 8
+      assert_css '.index a.indexterm', first, 8
+      assert_xpath '//*[@class="index"]//dt[starts-with(text(),"Animals,")]', first, 1
+      assert_includes first, 'see also Animals'
+      (xmlnodes_at_xpath '//*[@class="index"]//a[@class="indexterm"]', first).each do |link|
+        assert_css %(a#{link['href']}), first, 1
+      end
+      assert_equal first, doc.convert
     end
 
     test 'should honor xrefstyle when generating references in HTML index' do

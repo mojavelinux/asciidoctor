@@ -604,7 +604,7 @@ class Document < AbstractBlock
       @catalog[type] << value
     when :indexterms
       index_catalog = (@catalog[:indexterms] ||= (IndexCatalog.new attr 'lang'))
-      index_catalog.store_term value[0], (dest = index_catalog.create_dest value[1]), value[2]
+      index_catalog.store_term value[0], (dest = index_catalog.create_dest value[1], value[3]), value[2]
       dest.id
     else
       @catalog[type] << (type == :images ? (ImageReference.new value, @attributes['imagesdir']) : value) if @options[:catalog_assets]

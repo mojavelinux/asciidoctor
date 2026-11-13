@@ -76,6 +76,7 @@ module Substitutors
   def apply_subs text, subs = NORMAL_SUBS
     return text if text.empty? || !subs
 
+    title = text.equal? @title
     if (is_multiline = ::Array === text)
       text = text[1] ? (text.join LF) : text[0]
     end
@@ -100,7 +101,7 @@ module Substitutors
       when :replacements
         text = sub_replacements text
       when :macros
-        text = sub_macros text
+        text = sub_macros text, title
       when :highlight
         text = highlight_source text, (subs.include? :callouts)
       when :callouts
@@ -292,9 +293,10 @@ module Substitutors
   # Replace inline macros, which may span multiple lines, in the provided text
   #
   # source - The String text to process
+  # title  - Whether the source is a block or section title
   #
   # returns The converted String text
-  def sub_macros text
+  def sub_macros text, title = false
     #return text if text.nil_or_empty?
     # some look ahead assertions to cut unnecessary regex calls
     found_square_bracket = text.include? '['
@@ -439,6 +441,7 @@ module Substitutors
       # ((Tigers))
       # indexterm2:[Tigers]
       text = text.gsub InlineIndextermMacroRx do
+        occurrence = [self, title, text, $~.begin(0)]
         case $1
         when 'indexterm'
           # honor the escape
@@ -468,7 +471,7 @@ module Substitutors
           else
             attrs = { 'terms' => (terms = split_simple_csv attrlist) }
           end
-          (Inline.new self, :indexterm, nil, id: (doc.register :indexterms, [terms, self, assoc]), attributes: attrs).convert
+          (Inline.new self, :indexterm, nil, id: (doc.register :indexterms, [terms, self, assoc, occurrence]), attributes: attrs).convert
         when 'indexterm2'
           # honor the escape
           next $&.slice 1, $&.length if $&.start_with? RS
@@ -487,7 +490,7 @@ module Substitutors
               visible_term = (AttributeList.new visible_term, self).parse[1]
             end
           end
-          (Inline.new self, :indexterm, visible_term, id: (doc.register :indexterms, [term, self, assoc]), attributes: attrs, type: :visible).convert
+          (Inline.new self, :indexterm, visible_term, id: (doc.register :indexterms, [term, self, assoc, occurrence]), attributes: attrs, type: :visible).convert
         else
           encl_text = $3
           # honor the escape
@@ -529,7 +532,7 @@ module Substitutors
                 assoc = { see_also: see_also }
               end
             end
-            subbed_term = (Inline.new self, :indexterm, visible_term, id: (doc.register :indexterms, [term, self, assoc]), attributes: attrs, type: :visible).convert
+            subbed_term = (Inline.new self, :indexterm, visible_term, id: (doc.register :indexterms, [term, self, assoc, occurrence]), attributes: attrs, type: :visible).convert
           else
             # (((Tigers,Big cats)))
             attrs = {}
@@ -548,7 +551,7 @@ module Substitutors
               end
             end
             attrs['terms'] = terms = split_simple_csv terms
-            subbed_term = (Inline.new self, :indexterm, nil, id: (doc.register :indexterms, [terms, self, assoc]), attributes: attrs).convert
+            subbed_term = (Inline.new self, :indexterm, nil, id: (doc.register :indexterms, [terms, self, assoc, occurrence]), attributes: attrs).convert
           end
           before ? %(#{before}#{subbed_term}#{after}) : subbed_term
         end
