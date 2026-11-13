@@ -23,6 +23,7 @@ class Converter::Html5Converter < Converter::Base
   }).default = ['', '']
 
   DropAnchorRx = %r(<(?:a\b[^>]*|/a)>)
+  IndextermAnchorRx = %r(<a id="_indexterm_\d+"></a>)
   LeadingAnchorsRx = %r(^(?:<a id="[^"]+"></a>)+)
   StemBreakRx = / *\\\n(?:\\?\n)*|\n\n+/
   if RUBY_ENGINE == 'opal'
@@ -93,6 +94,8 @@ class Converter::Html5Converter < Converter::Base
   end
 
   def convert_document node
+    # Titles and quote attributions may contain anchors cached during parsing.
+    strip_indexterm_anchors = node.catalog[:indexterms] && !(index_section? node)
     br = %(<br#{slash = @void_element_slash}>)
     unless (asset_uri_scheme = node.attr 'asset-uri-scheme', 'https').empty?
       asset_uri_scheme = %(#{asset_uri_scheme}:)
@@ -300,10 +303,12 @@ MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
 
     result << '</body>'
     result << '</html>'
-    result.join LF
+    output = result.join LF
+    strip_indexterm_anchors ? (output.gsub IndextermAnchorRx, '') : output
   end
 
   def convert_embedded node
+    strip_indexterm_anchors = node.catalog[:indexterms] && !(index_section? node)
     result = []
     if node.doctype == 'manpage'
       # QUESTION should notitle control the manual page title?
@@ -339,7 +344,8 @@ MathJax.Hub.Register.StartupHook("AsciiMath Jax Ready", function () {
       result << '</div>'
     end
 
-    result.join LF
+    output = result.join LF
+    strip_indexterm_anchors ? (output.gsub IndextermAnchorRx, '') : output
   end
 
   def convert_outline node, opts = {}
@@ -1270,7 +1276,8 @@ Your browser does not support the video tag.
   end
 
   def convert_inline_indexterm node
-    %(<a id="#{node.id}"></a>#{node.type == :visible ? node.text : ''})
+    text = node.type == :visible ? node.text : ''
+    !node.document.parsed? || (index_section? node) ? %(<a id="#{node.id}"></a>#{text}) : text
   end
 
   def convert_inline_kbd node
@@ -1368,6 +1375,22 @@ Your browser does not support the video tag.
 
   def encode_attribute_value val
     (val.include? '"') ? (val.gsub '"', '&quot;') : val
+  end
+
+  def index_section? node
+    doc = get_root_document node
+    unless @index_document.equal? doc
+      @index_document = doc
+      @index_section = doc.blocks.any? do |section|
+        next unless section.context == :section
+        if section.level == 0
+          section.blocks.any? {|child| child.context == :section && child.level == 1 && child.special && child.sectname == 'index' }
+        else
+          section.level == 1 && section.special && section.sectname == 'index'
+        end
+      end
+    end
+    @index_section
   end
 
   def generate_index_section_content node

@@ -3014,22 +3014,50 @@ context 'Sections' do
       using_memory_logger do |logger|
         output = convert_string_to_embedded input
         assert_css '.index', output, 0
+        assert_css 'a[id^="_indexterm_"]', output, 0
         assert_message logger, :WARN, '<stdin>: line 10: index section can only be defined at level 0 (when doctype is book) or level 1', Hash
       end
     end
 
-    test 'should output anchors for index terms in HTML output even if index section is not present' do
+    test 'should omit index term anchors unless an index section is present' do
       input = <<~'EOS'
       = Document Title
 
-      == Animals
+      == ((Animals))
 
       The ((tiger)) is the largest ((cat)) species.
+      (((concealed))) indexterm2:[visible] indexterm:[hidden]
+
+      "A quotation."
+      -- ((Author))
       EOS
 
-      output = convert_string_to_embedded input
-      assert_css 'a#_indexterm_1', output, 1
-      assert_css 'a#_indexterm_2', output, 1
+      [false, true].each do |standalone|
+        doc = Asciidoctor.load input, standalone: standalone
+        output = doc.convert
+        assert_css 'a[id^="_indexterm_"]', output, 0
+        assert_xpath '//h2[text()="Animals"]', output, 1
+        assert_includes output, 'The tiger is the largest cat species.'
+        assert_includes output, 'visible'
+        assert_includes output, 'Author'
+        refute_includes output, 'concealed'
+        refute_includes output, 'hidden'
+        assert_equal output, doc.convert
+
+        output = Asciidoctor.convert %(#{input}\n[index]\n== Index\n), standalone: standalone
+        assert_css 'a[id^="_indexterm_"]', output, 7
+        assert_css '.index a.indexterm', output, 7
+      end
+    end
+
+    test 'should check each document when an HTML converter is reused' do
+      converter = Asciidoctor::Converter.create 'html5'
+      input = "== Animals\n\n((tiger))\n"
+      [false, true, false].each do |indexed|
+        source = indexed ? %(#{input}\n[index]\n== Index\n) : input
+        output = Asciidoctor.convert source, standalone: false, converter: converter
+        assert_css 'a[id^="_indexterm_"]', output, indexed ? 1 : 0
+      end
     end
   end
 
