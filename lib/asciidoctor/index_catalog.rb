@@ -21,8 +21,12 @@ module Asciidoctor
       %(_indexterm_#{@sequence += 1})
     end
 
-    def create_dest parent
-      IndexDestination.new next_anchor_name, parent
+    def create_dest parent, occurrence = nil
+      return @dests[occurrence] if occurrence && @dests.key?(occurrence)
+
+      dest = IndexDestination.new next_anchor_name, parent
+      @dests[occurrence] = dest if occurrence
+      dest
     end
 
     def store_term names, dest, assoc = {}
@@ -131,7 +135,7 @@ module Asciidoctor
           term.associations[:see] = see
         end
         if (see_also = assoc[:see_also])
-          (term.associations[:see_also] ||= []).concat see_also
+          (term.associations[:see_also] ||= []).concat(see_also).uniq!
         end
       end
       term

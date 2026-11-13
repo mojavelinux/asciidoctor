@@ -2871,6 +2871,77 @@ context 'Sections' do
       assert_includes output, '<a class="indexterm" href="#_indexterm_4">Institutes</a>'
     end
 
+    test 'should preserve authored content in an index section' do
+      input = <<~'EOS'
+      = Document Title
+
+      == Animals
+
+      The ((tiger)) is the largest cat species.
+
+      [index]
+      == Index
+
+      Index introduction.
+      EOS
+
+      output = convert_string_to_embedded input
+      assert_includes output, '<p>Index introduction.</p>'
+      assert_css '.sectionbody > .paragraph + .index', output, 1
+      assert_css '.index a.indexterm', output, 1
+
+      output = convert_string_to_embedded input.sub '((tiger))', 'tiger'
+      assert_includes output, '<p>Index introduction.</p>'
+      assert_css '.index', output, 0
+    end
+
+    test 'should render see-also association for a leaf index term in HTML output' do
+      input = <<~'EOS'
+      = Document Title
+
+      == Formats
+
+      indexterm2:[HTML,see-also=CSS]
+      indexterm2:[CSS]
+
+      [index]
+      == Index
+      EOS
+
+      output = convert_string_to_embedded input
+      assert_includes output, 'see also CSS'
+    end
+
+    test 'should generate the same HTML index when a document is converted twice' do
+      input = <<~'EOS'
+      = Document Title
+
+      == ((Animals))
+
+      A ((tiger)) and another ((tiger)).
+      indexterm2:[Cats,see-also=Animals]
+      indexterm:[Big cats,Lions]
+      (((Big cats,Tigers)))
+
+      .((lion))
+      ((lion))
+
+      [index]
+      == Index
+      EOS
+
+      doc = Asciidoctor.load input, standalone: false
+      first = doc.convert
+      assert_css 'a[id^="_indexterm_"]', first, 8
+      assert_css '.index a.indexterm', first, 8
+      assert_xpath '//*[@class="index"]//dt[starts-with(text(),"Animals,")]', first, 1
+      assert_includes first, 'see also Animals'
+      (xmlnodes_at_xpath '//*[@class="index"]//a[@class="indexterm"]', first).each do |link|
+        assert_css %(a#{link['href']}), first, 1
+      end
+      assert_equal first, doc.convert
+    end
+
     test 'should honor xrefstyle when generating references in HTML index' do
       input = <<~'EOS'
       = Document Title
@@ -2943,22 +3014,50 @@ context 'Sections' do
       using_memory_logger do |logger|
         output = convert_string_to_embedded input
         assert_css '.index', output, 0
+        assert_css 'a[id^="_indexterm_"]', output, 0
         assert_message logger, :WARN, '<stdin>: line 10: index section can only be defined at level 0 (when doctype is book) or level 1', Hash
       end
     end
 
-    test 'should output anchors for index terms in HTML output even if index section is not present' do
+    test 'should omit index term anchors unless an index section is present' do
       input = <<~'EOS'
       = Document Title
 
-      == Animals
+      == ((Animals))
 
       The ((tiger)) is the largest ((cat)) species.
+      (((concealed))) indexterm2:[visible] indexterm:[hidden]
+
+      "A quotation."
+      -- ((Author))
       EOS
 
-      output = convert_string_to_embedded input
-      assert_css 'a#_indexterm_1', output, 1
-      assert_css 'a#_indexterm_2', output, 1
+      [false, true].each do |standalone|
+        doc = Asciidoctor.load input, standalone: standalone
+        output = doc.convert
+        assert_css 'a[id^="_indexterm_"]', output, 0
+        assert_xpath '//h2[text()="Animals"]', output, 1
+        assert_includes output, 'The tiger is the largest cat species.'
+        assert_includes output, 'visible'
+        assert_includes output, 'Author'
+        refute_includes output, 'concealed'
+        refute_includes output, 'hidden'
+        assert_equal output, doc.convert
+
+        output = Asciidoctor.convert %(#{input}\n[index]\n== Index\n), standalone: standalone
+        assert_css 'a[id^="_indexterm_"]', output, 7
+        assert_css '.index a.indexterm', output, 7
+      end
+    end
+
+    test 'should check each document when an HTML converter is reused' do
+      converter = Asciidoctor::Converter.create 'html5'
+      input = "== Animals\n\n((tiger))\n"
+      [false, true, false].each do |indexed|
+        source = indexed ? %(#{input}\n[index]\n== Index\n) : input
+        output = Asciidoctor.convert source, standalone: false, converter: converter
+        assert_css 'a[id^="_indexterm_"]', output, indexed ? 1 : 0
+      end
     end
   end
 

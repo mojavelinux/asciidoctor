@@ -1384,7 +1384,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string %(#{sentence}#{macro})
         output = para.sub_macros para.source
-        assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+        assert_equal sentence, output
         category_t = para.document.catalog[:indexterms].find_category 'T'
         refute_nil category_t
         term_tigers = category_t.find_term 'Tigers'
@@ -1401,7 +1401,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string %(#{sentence}#{macro})
         output = para.sub_macros para.source
-        assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+        assert_equal sentence, output
         category_b = para.document.catalog[:indexterms].find_category 'B'
         refute_nil category_b
         category_t = para.document.catalog[:indexterms].find_category 'T'
@@ -1420,7 +1420,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string %(#{sentence}#{macro})
         output = para.sub_macros para.source
-        assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+        assert_equal sentence, output
         category_b = para.document.catalog[:indexterms].find_category 'B'
         refute_nil category_b
         assert_equal 'Big cats', category_b.terms.first.name
@@ -1435,7 +1435,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string %(#{sentence}#{macro})
         output = para.sub_macros para.source
-        assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+        assert_equal sentence, output
         category_p = para.document.catalog[:indexterms].find_category 'P'
         refute_nil category_p
         assert_equal 'Panthera tigris', category_p.terms.first.name
@@ -1454,7 +1454,7 @@ context 'Substitutions' do
       input = %(National Institute of Science and Technology #{BACKSLASH}(((NIST))))
       doc = document_from_string input, standalone: false
       output = doc.convert
-      assert_includes output, '<p>National Institute of Science and Technology (<a id="_indexterm_1"></a>NIST)</p>'
+      assert_includes output, '<p>National Institute of Science and Technology (NIST)</p>'
       refute_empty doc.catalog[:indexterms]
       category_n = doc.catalog[:indexterms].find_category 'N'
       refute_nil category_n
@@ -1477,7 +1477,7 @@ context 'Substitutions' do
       inputs.each do |input|
         para = block_from_string input
         output = para.sub_macros para.source
-        assert_equal %(#{input.lines.first}<a id="_indexterm_1"></a><a id="_indexterm_2"></a>), output
+        assert_equal input.lines.first, output
         assert_equal %w(@ T), para.document.catalog[:indexterms].categories.map(&:name)
         assert_equal '[Mammals]', (para.document.catalog[:indexterms].find_category '@').terms.first.name
         assert_equal 'Tigers', (para.document.catalog[:indexterms].find_category 'T').terms.first.name
@@ -1491,7 +1491,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string %(#{sentence}#{macro})
         output = para.apply_subs para.source
-        assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+        assert_equal sentence, output
         category_t = para.document.catalog[:indexterms].find_category 'T'
         refute_nil category_t
         assert_equal 'Tigers', category_t.terms.first.name
@@ -1503,7 +1503,7 @@ context 'Substitutions' do
       macros = %[(((Tigers)))\n(((Animals,Cats)))]
       para = block_from_string %(#{sentence}\n#{macros})
       output = para.sub_macros para.source
-      assert_equal %(#{sentence}\n<a id="_indexterm_1"></a>\n<a id="_indexterm_2"></a>), output.rstrip
+      assert_equal sentence, output.rstrip
       assert_equal 2, para.document.catalog[:indexterms].categories.size
       assert_equal 'Tigers', (para.document.catalog[:indexterms].find_category 'T').terms.first.name
       assert_equal 'Animals', (para.document.catalog[:indexterms].find_category 'A').terms.first.name
@@ -1515,7 +1515,7 @@ context 'Substitutions' do
       macro = '(((Tiger (Panthera tigris))))'
       para = block_from_string %(#{sentence}#{macro})
       output = para.sub_macros para.source
-      assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+      assert_equal sentence, output
       category_t = para.document.catalog[:indexterms].find_category 'T'
       refute_nil category_t
       assert_equal 'Tiger (Panthera tigris)', category_t.terms.first.name
@@ -1554,7 +1554,7 @@ context 'Substitutions' do
       macro = 'indexterm:[Tiger [Panthera tigris\\]]'
       para = block_from_string %(#{sentence}#{macro})
       output = para.sub_macros para.source
-      assert_equal %(#{sentence}<a id="_indexterm_1"></a>), output
+      assert_equal sentence, output
       assert_equal 'Tiger [Panthera tigris]', para.document.catalog[:indexterms].categories.first.terms.first.name
     end
 
@@ -1563,7 +1563,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string macro
         output = para.sub_macros para.source
-        assert_equal 'The <a id="_indexterm_1"></a>tiger (Panthera tigris) is the largest cat species.', output
+        assert_equal 'The tiger (Panthera tigris) is the largest cat species.', output
         assert_equal 'tiger', para.document.catalog[:indexterms].categories.first.terms.first.name
       end
     end
@@ -1573,7 +1573,7 @@ context 'Substitutions' do
       macros.each do |macro|
         para = block_from_string macro
         output = para.sub_macros para.source
-        assert_equal 'The <a id="_indexterm_1"></a>panthera tigris is the largest cat species.', output
+        assert_equal 'The panthera tigris is the largest cat species.', output
         assert_equal 'panthera tigris', para.document.catalog[:indexterms].categories.first.terms.first.name
       end
     end
@@ -1582,7 +1582,7 @@ context 'Substitutions' do
       sentence = 'The ((tiger)) (Panthera tigris) is the largest ((cat)) species.'
       para = block_from_string sentence
       output = para.sub_macros para.source
-      assert_equal 'The <a id="_indexterm_1"></a>tiger (Panthera tigris) is the largest <a id="_indexterm_2"></a>cat species.', output
+      assert_equal 'The tiger (Panthera tigris) is the largest cat species.', output
       assert_equal 'tiger', (para.document.catalog[:indexterms].find_category 'T').terms.first.name
       assert_equal 'cat', (para.document.catalog[:indexterms].find_category 'C').terms.first.name
     end
@@ -1599,7 +1599,7 @@ context 'Substitutions' do
       sentence = 'The ((*tiger*)) (Panthera tigris) is the largest cat species.'
       para = block_from_string sentence
       output = para.apply_subs para.source
-      assert_equal 'The <a id="_indexterm_1"></a><strong>tiger</strong> (Panthera tigris) is the largest cat species.', output
+      assert_equal 'The <strong>tiger</strong> (Panthera tigris) is the largest cat species.', output
       assert_equal 'tiger', para.document.catalog[:indexterms].categories.first.terms.first.name
     end
 
@@ -1607,7 +1607,7 @@ context 'Substitutions' do
       sentence = %[The ((panthera tigris)) is the largest cat species.\n(((Big cats,Tigers)))]
       para = block_from_string sentence
       output = para.sub_macros para.source
-      assert_equal %(The <a id="_indexterm_1"></a>panthera tigris is the largest cat species.\n<a id="_indexterm_2"></a>), output
+      assert_equal %(The panthera tigris is the largest cat species.\n), output
       assert_equal 'panthera tigris', (para.document.catalog[:indexterms].find_category 'P').terms.first.name
       assert_equal 'Big cats', (para.document.catalog[:indexterms].find_category 'B').terms.first.name
       assert_equal 'Tigers', (para.document.catalog[:indexterms].find_category 'B').terms.first.subterms.first.name
